@@ -1,3 +1,4 @@
+// lib/screens/admin/analytics_screen.dart
 import 'package:flutter/material.dart';
 
 class AnalyticsScreen extends StatelessWidget {

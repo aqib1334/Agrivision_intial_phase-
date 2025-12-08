@@ -14,7 +14,7 @@ class AgroScanScreen extends StatefulWidget {
 
 class _AgroScanScreenState extends State<AgroScanScreen> {
   // Colors
-  static const Color primaryDark = Color(0xFF1B5E20);
+  // static const Color primaryDark = Color(0xFF1B5E20);
   static const Color primaryMain = Color(0xFF388E3C);
   static const Color primaryLight = Color(0xFF66BB6A);
   static const Color primaryPale = Color(0xFFE8F5E9);

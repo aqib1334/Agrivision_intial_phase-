@@ -1,7 +1,6 @@
 // ============================================================================
 // FILE: lib/widgets/admin/user_data_table.dart
 // ============================================================================
-// Fixed version - searchQuery parameter removed (handled in parent)
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

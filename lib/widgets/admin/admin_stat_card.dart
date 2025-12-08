@@ -1,3 +1,4 @@
+// FILE: lib/widgets/admin/admin_stat_card.dart
 import 'package:flutter/material.dart';
 
 class AdminStatCard extends StatefulWidget {

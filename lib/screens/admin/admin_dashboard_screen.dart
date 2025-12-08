@@ -1,8 +1,4 @@
-// ============================================================================
-// FILE: lib/screens/admin/admin_dashboard_screen.dart
-// ============================================================================
-// Fixed version - All errors resolved
-
+// lib/screens/admin/admin_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animate_do/animate_do.dart';
@@ -34,7 +30,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   int _selectedIndex = 0;
   String? _errorMessage;
   bool _isSidebarCollapsed = false;
-  String _searchQuery = '';
+ 
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -91,7 +87,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         });
       }
     } catch (e) {
-      print('❌ Stats Error: $e');
+      print(' Stats Error: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
