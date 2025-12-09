@@ -1,16 +1,15 @@
 // lib/models/orchard_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 class OrchardModel {
   final String id;
   final String farmerId;
-  final String name; // e.g. "Mera Aam ka Bagh"
+  final String name;
   final String location;
-  final String fruitType; // Ab ye String hoga, Farmer khud likhega
-  final double areaSize;
+  final String fruitType;
+  final String areaSize; // ✅ Changed from double to String
   final int totalTrees;
-  final List<String> imageUrls; // Multiple Images
-  final double expectedPrice; // Poore bagh ki qeemat
+  final List<String> imageUrls;
+  final double expectedPrice;
   final String description;
   final DateTime createdAt;
 
@@ -20,7 +19,7 @@ class OrchardModel {
     required this.name,
     required this.location,
     required this.fruitType,
-    required this.areaSize,
+    required this.areaSize, // ✅ String
     required this.totalTrees,
     required this.imageUrls,
     required this.expectedPrice,
@@ -35,7 +34,7 @@ class OrchardModel {
       'name': name,
       'location': location,
       'fruitType': fruitType,
-      'areaSize': areaSize,
+      'areaSize': areaSize, // ✅ String saved
       'totalTrees': totalTrees,
       'imageUrls': imageUrls,
       'expectedPrice': expectedPrice,
@@ -51,8 +50,8 @@ class OrchardModel {
       name: map['name'] ?? '',
       location: map['location'] ?? '',
       fruitType: map['fruitType'] ?? '',
-      areaSize: (map['areaSize'] ?? 0).toDouble(),
-      totalTrees: (map['totalTrees'] ?? 0).toInt(),
+      areaSize: map['areaSize']?.toString() ?? '0', // ✅ Convert to String
+      totalTrees: map['totalTrees'] ?? 0,
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       expectedPrice: (map['expectedPrice'] ?? 0).toDouble(),
       description: map['description'] ?? '',
@@ -60,4 +59,3 @@ class OrchardModel {
     );
   }
 }
-

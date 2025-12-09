@@ -1,4 +1,3 @@
-// lib/screens/admin/admin_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animate_do/animate_do.dart';
@@ -13,6 +12,9 @@ import 'listing_moderation_screen.dart';
 import 'order_management_screen.dart';
 import 'analytics_screen.dart';
 
+// ✅ NEW IMPORT: Verification Screen
+import 'verification_requests_screen.dart';
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -23,6 +25,8 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     with SingleTickerProviderStateMixin {
   final AdminService _adminService = AdminService();
+  
+  // ignore: unused_field
   final TextEditingController _searchController = TextEditingController();
   
   Map<String, dynamic> _stats = {};
@@ -30,7 +34,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   int _selectedIndex = 0;
   String? _errorMessage;
   bool _isSidebarCollapsed = false;
- 
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -105,6 +108,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     }
   }
 
+  // ✅ UPDATED: Added Case 5 for Verification Requests
   Widget _getSelectedScreen() {
     switch (_selectedIndex) {
       case 0:
@@ -117,6 +121,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return const OrderManagementScreen();
       case 4:
         return const AnalyticsScreen();
+      case 5: // 👈 New Case for Sidebar Index 5
+        return const VerificationRequestsScreen();
       default:
         return _buildDashboard();
     }
@@ -156,7 +162,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Expanded(
               child: Column(
                 children: [
-                  // Animated Top Bar with Menu Toggle & Search
+                  // Animated Top Bar with Menu Toggle
                   FadeInDown(
                     duration: const Duration(milliseconds: 600),
                     child: Container(
@@ -215,58 +221,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           ),
                           
                           const Spacer(),
-                          
-                          // Search Bar
-                          // Container(
-                          //   width: 300,
-                          //   height: 45,
-                          //   decoration: BoxDecoration(
-                          //     color: Colors.grey.shade100,
-                          //     borderRadius: BorderRadius.circular(12),
-                          //     border: Border.all(
-                          //       color: Colors.grey.shade300,
-                          //     ),
-                          //   ),
-                          //   child: TextField(
-                          //     controller: _searchController,
-                          //     onChanged: (value) {
-                          //       setState(() {
-                          //         _searchQuery = value;
-                          //       });
-                          //     },
-                          //     decoration: InputDecoration(
-                          //       hintText: 'Search by name or email...',
-                          //       hintStyle: TextStyle(
-                          //         color: Colors.grey.shade500,
-                          //         fontSize: 14,
-                          //       ),
-                          //       prefixIcon: Icon(
-                          //         Icons.search,
-                          //         color: Colors.grey.shade600,
-                          //       ),
-                          //       suffixIcon: _searchQuery.isNotEmpty
-                          //           ? IconButton(
-                          //               icon: Icon(
-                          //                 Icons.clear,
-                          //                 color: Colors.grey.shade600,
-                          //               ),
-                          //               onPressed: () {
-                          //                 _searchController.clear();
-                          //                 setState(() {
-                          //                   _searchQuery = '';
-                          //                 });
-                          //               },
-                                      // )
-                                    // : null,
-                                // border: InputBorder.none,
-                          //       contentPadding: const EdgeInsets.symmetric(
-                          //         vertical: 12,
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
-                          
-                          const SizedBox(width: 12),
                           
                           // Animated Refresh Button
                           Pulse(
@@ -341,6 +295,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         return 'Orders';
       case 4:
         return 'Analytics';
+      case 5: // 👈 Added Title for Case 5
+        return 'Verification Requests';
       default:
         return 'Dashboard';
     }
@@ -460,7 +416,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Message with Animation
+              // Welcome Message
               FadeInLeft(
                 duration: const Duration(milliseconds: 600),
                 child: ShaderMask(
@@ -496,7 +452,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ),
               const SizedBox(height: 32),
 
-              // Top Stat Cards with Staggered Animation
+              // Top Stat Cards
               Row(
                 children: [
                   Expanded(
@@ -554,7 +510,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ),
               const SizedBox(height: 32),
               
-              // Charts Section with Animation
+              // Charts Section
               FadeInUp(
                 duration: const Duration(milliseconds: 800),
                 delay: const Duration(milliseconds: 600),
@@ -569,7 +525,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ),
               const SizedBox(height: 32),
               
-              // Recent Users Table with Animation
+              // Recent Users Table
               FadeInUp(
                 duration: const Duration(milliseconds: 800),
                 delay: const Duration(milliseconds: 700),

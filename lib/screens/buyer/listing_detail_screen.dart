@@ -1,5 +1,6 @@
-// lib/screens/buyer/listings_detail_screen.dart
-// ✅ PADDING FIXED - Logic unchanged
+// ✅ COMPLETE FILE: lib/screens/buyer/listing_detail_screen.dart
+// ✅ ULTRA COMPACT PRICE CARDS - Matching screenshot requirement
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +10,8 @@ import 'dart:ui';
 import '../../models/listing_model.dart';
 import '../../services/buyer/order_request_service.dart';
 import '../../widgets/common/animated_button.dart';
+import '../../services/common/verification_service.dart';
+import '../../screens/common/verification_screen.dart';
 
 class ListingDetailScreen extends StatefulWidget {
   final ListingModel listing;
@@ -78,7 +81,66 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     }
   }
 
-  void _showRequestDialog() {
+  Future<bool> _checkVerification() async {
+    String status = await VerificationService().getCurrentUserStatus();
+
+    if (status == 'verified') return true;
+
+    if (!mounted) return false;
+
+    String title = status == 'pending_approval'
+        ? "Verification Pending"
+        : "Verification Required";
+    String msg = status == 'pending_approval'
+        ? "Your documents are under review by Admin. You cannot place orders yet."
+        : "To ensure trust and safety, you must verify your identity before placing orders.";
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(msg),
+        actionsAlignment: MainAxisAlignment.end,
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          if (status == 'unverified' || status == 'rejected')
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VerificationScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF388E3C),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                "Verify Now",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
+      ),
+    );
+    return false;
+  }
+
+  // Pura _showRequestDialog function replace karein:
+
+void _showRequestDialog() {
     showDialog(
       context: context,
       builder: (context) => BackdropFilter(
@@ -87,28 +149,38 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
+          // ✅ Dialog ke Title aur Content ki spacing
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 10),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          // ✅ Buttons ki spacing (Taake wo bottom se chipke na hon)
+          actionsPadding: const EdgeInsets.fromLTRB(24, 10, 24, 24), 
+        
           title: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFFE8F5E9), // Light Green bg
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   widget.listing.isFullOrchard
                       ? Iconsax.tree
                       : Iconsax.shopping_cart,
                   color: const Color(0xFF388E3C),
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   widget.listing.isFullOrchard
-                      ? 'Request Full Orchard'
+                      ? 'Request Orchard'
                       : 'Request Purchase',
-                  style: const TextStyle(fontSize: 18),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -119,40 +191,82 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 8),
                 Text(
                   widget.listing.isFullOrchard
                       ? 'Send an inquiry to purchase this entire orchard.'
-                      : 'Send a purchase request to the farmer for this listing.',
+                      : 'Send a purchase request to the farmer.',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+
+                // ✅ Text Field Styling (Filled Grey like screenshot)
                 TextFormField(
                   controller: _messageController,
                   maxLines: 4,
                   decoration: InputDecoration(
                     labelText: 'Message (Optional)',
-                    hintText: 'Add any specific requirements or questions...',
+                    hintText: 'Any specific requirements...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 13,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5), // Light Grey Fill
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none, // Border hata diya
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF388E3C),
+                        width: 1,
+                      ),
                     ),
                     prefixIcon: const Icon(
                       Iconsax.message_text,
                       color: Color(0xFF388E3C),
+                      size: 20,
                     ),
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                 ),
               ],
             ),
           ),
           actions: [
+            // ✅ Cancel Button (Purple/Grey Text)
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              style: TextButton.styleFrom(
+                foregroundColor:
+                    Colors.deepPurple.shade300, // Match screenshot text color
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
             ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+
+            // ✅ Send Request Button (Green Filled)
             ElevatedButton(
               onPressed: _isLoading ? null : _sendRequest,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF388E3C),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -165,7 +279,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     )
                   : const Text(
                       'Send Request',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
             ),
           ],
@@ -173,6 +290,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       ),
     );
   }
+    
 
   Future<void> _sendRequest() async {
     if (!_formKey.currentState!.validate()) return;
@@ -217,13 +335,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     bool isOrchard = widget.listing.isFullOrchard;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: const Color(0xFF388E3C),
+            backgroundColor: Colors.green.shade100,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -260,7 +378,6 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       ),
                     ),
                   ),
-
                   if (isOrchard)
                     Positioned(
                       top: 60,
@@ -307,7 +424,6 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: FadeInUp(
               duration: const Duration(milliseconds: 600),
@@ -366,9 +482,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     if (widget.listing.location != null) ...[
                       Row(
                         children: [
@@ -390,6 +504,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       const SizedBox(height: 16),
                     ],
 
+                    // ✅ ULTRA COMPACT STAT BOXES
                     FadeInUp(
                       duration: const Duration(milliseconds: 700),
                       child: isOrchard
@@ -397,11 +512,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           : _buildProduceStats(),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
+                    // ✅ ULTRA COMPACT TOTAL PRICE BANNER
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -424,15 +543,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             'Total Price',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Text(
                             'PKR ${widget.listing.totalPrice.toStringAsFixed(0)}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 32,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -524,7 +643,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             : (isOrchard
                                   ? Iconsax.tree
                                   : Iconsax.shopping_cart),
-                        onPressed: _hasRequested ? () {} : _showRequestDialog,
+                        onPressed: _hasRequested
+                            ? () {}
+                            : () async {
+                                if (await _checkVerification()) {
+                                  _showRequestDialog();
+                                }
+                              },
                         backgroundColor: _hasRequested
                             ? Colors.grey.shade400
                             : Colors.green.shade700,
@@ -597,6 +722,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     );
   }
 
+  // ✅ ULTRA COMPACT STAT BOX - Matching screenshot perfectly
   Widget _buildStatBox(
     IconData icon,
     String value,
@@ -605,30 +731,34 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     Color iconColor,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: iconColor.withOpacity(0.2), width: 1.5),
       ),
       child: Column(
         children: [
-          Icon(icon, color: iconColor, size: 28),
-          const SizedBox(height: 8),
+          Icon(icon, color: iconColor, size: 22),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: 14,
               color: iconColor,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

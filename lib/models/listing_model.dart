@@ -19,7 +19,7 @@ class ListingModel {
   
   // ✅ NEW: Full Orchard Specific Fields
   final int? totalTrees; // Number of trees in orchard
-  final double? areaSize; // Area in acres
+  final String? areaSize; // ✅ CHANGED FROM double? TO String?
   final String? orchardCondition; // "excellent", "good", "fair"
   final String? harvestSeason; // "Summer 2025", "Winter 2025"
   final int? expectedYield; // Expected yield in kg/tons
@@ -38,16 +38,16 @@ class ListingModel {
     required this.farmerId,
     required this.orchardName,
     required this.fruitType,
-    required this.listingType, // ✅ NEW
+    required this.listingType,
     required this.quantity,
     required this.unit,
     required this.pricePerUnit,
     required this.totalPrice,
-    this.totalTrees, // ✅ NEW
-    this.areaSize, // ✅ NEW
-    this.orchardCondition, // ✅ NEW
-    this.harvestSeason, // ✅ NEW
-    this.expectedYield, // ✅ NEW
+    this.totalTrees,
+    this.areaSize, // ✅ NOW STRING
+    this.orchardCondition,
+    this.harvestSeason,
+    this.expectedYield,
     required this.imageUrls,
     required this.description,
     required this.status,
@@ -65,16 +65,16 @@ class ListingModel {
       'farmerId': farmerId,
       'orchardName': orchardName,
       'fruitType': fruitType,
-      'listingType': listingType, // ✅ NEW
+      'listingType': listingType,
       'quantity': quantity,
       'unit': unit,
       'pricePerUnit': pricePerUnit,
       'totalPrice': totalPrice,
-      'totalTrees': totalTrees, // ✅ NEW
-      'areaSize': areaSize, // ✅ NEW
-      'orchardCondition': orchardCondition, // ✅ NEW
-      'harvestSeason': harvestSeason, // ✅ NEW
-      'expectedYield': expectedYield, // ✅ NEW
+      'totalTrees': totalTrees,
+      'areaSize': areaSize, // ✅ NOW STRING
+      'orchardCondition': orchardCondition,
+      'harvestSeason': harvestSeason,
+      'expectedYield': expectedYield,
       'imageUrls': imageUrls,
       'description': description,
       'status': status,
@@ -93,16 +93,16 @@ class ListingModel {
       farmerId: map['farmerId'] ?? '',
       orchardName: map['orchardName'] ?? '',
       fruitType: map['fruitType'] ?? '',
-      listingType: map['listingType'] ?? 'produce', // ✅ NEW (default to produce)
+      listingType: map['listingType'] ?? 'produce',
       quantity: (map['quantity'] ?? 0).toDouble(),
       unit: map['unit'] ?? 'kg',
       pricePerUnit: (map['pricePerUnit'] ?? 0).toDouble(),
       totalPrice: (map['totalPrice'] ?? 0).toDouble(),
-      totalTrees: map['totalTrees'], // ✅ NEW
-      areaSize: map['areaSize'] != null ? (map['areaSize'] as num).toDouble() : null, // ✅ NEW
-      orchardCondition: map['orchardCondition'], // ✅ NEW
-      harvestSeason: map['harvestSeason'], // ✅ NEW
-      expectedYield: map['expectedYield'], // ✅ NEW
+      totalTrees: map['totalTrees'],
+      areaSize: map['areaSize']?.toString(), // ✅ CONVERT TO STRING
+      orchardCondition: map['orchardCondition'],
+      harvestSeason: map['harvestSeason'],
+      expectedYield: map['expectedYield'],
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       description: map['description'] ?? '',
       status: map['status'] ?? 'available',
@@ -147,7 +147,7 @@ class ListingModel {
     double? pricePerUnit,
     double? totalPrice,
     int? totalTrees,
-    double? areaSize,
+    String? areaSize, // ✅ NOW STRING
     String? orchardCondition,
     String? harvestSeason,
     int? expectedYield,
@@ -171,7 +171,7 @@ class ListingModel {
       pricePerUnit: pricePerUnit ?? this.pricePerUnit,
       totalPrice: totalPrice ?? this.totalPrice,
       totalTrees: totalTrees ?? this.totalTrees,
-      areaSize: areaSize ?? this.areaSize,
+      areaSize: areaSize ?? this.areaSize, // ✅ NOW STRING
       orchardCondition: orchardCondition ?? this.orchardCondition,
       harvestSeason: harvestSeason ?? this.harvestSeason,
       expectedYield: expectedYield ?? this.expectedYield,
@@ -185,5 +185,3 @@ class ListingModel {
     );
   }
 }
-
-

@@ -26,7 +26,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Colors.green.shade50,
       endDrawer: _buildHistorySidebar(),
       body: SafeArea(
         child: StreamBuilder<List<OrderRequestModel>>(

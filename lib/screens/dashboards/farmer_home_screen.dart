@@ -560,8 +560,8 @@ class _FarmerHomeScreenState extends State<FarmerHomeScreen> {
                               farmerId: recentOrchard!['farmerId'] ?? '',
                               name: recentOrchard!['name'] ?? 'Unknown',
                               location: recentOrchard!['location'] ?? 'Unknown',
-                              areaSize: (recentOrchard!['areaSize'] ?? 0)
-                                  .toDouble(),
+                              areaSize:
+                                  recentOrchard!['areaSize']?.toString() ?? '0',
                               fruitType:
                                   recentOrchard!['fruitType'] ?? 'Unknown',
                               totalTrees: recentOrchard!['totalTrees'] ?? 0,

@@ -74,6 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Future<void> _storeUserDetails(String uid) async {
+    // ✅ MODIFIED: Added verificationStatus
     await FirebaseFirestore.instance.collection('Users').doc(uid).set({
       'uid': uid,
       'name': _fullNameController.text.trim(),
@@ -85,6 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       'registration_date': FieldValue.serverTimestamp(),
       'status': 'active',
       'emailVerified': false,
+      'verificationStatus': 'unverified', // 👈 New Critical Field
     });
   }
 
@@ -438,7 +440,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 const Text(
                                   "Already have an account?",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: Color.fromARGB(255, 32, 30, 30),
                                     fontSize: 15,
                                   ),
                                 ),
@@ -453,7 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: Color.fromARGB(255, 32, 30, 30),
                                       decoration: TextDecoration.underline,
                                     ),
                                   ),

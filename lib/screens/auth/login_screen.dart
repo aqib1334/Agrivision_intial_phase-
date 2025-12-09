@@ -374,7 +374,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 const Text(
                                   "Don't have an account?",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: Color.fromARGB(255, 32, 25, 25),
                                     fontSize: 15,
                                   ),
                                 ),
@@ -389,7 +389,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: Color.fromARGB(255, 32, 25, 25),
                                       decoration: TextDecoration.underline,
                                     ),
                                   ),

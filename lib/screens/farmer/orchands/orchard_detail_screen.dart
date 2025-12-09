@@ -1,17 +1,15 @@
-// lib/screens/farmer/orchands/orchard_detail_screen.dart
-// ✅ FIXED: Delete dialog button padding
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:animate_do/animate_do.dart';
 import 'dart:ui';
 import '../../../models/orchard_model.dart';
-import '../../../models/listing_model.dart';
 import '../../../services/farmer/orchard_service.dart';
 import '../../../services/farmer/listing_service.dart';
 import '../../../widgets/common/animated_button.dart';
 import 'add_orchard_screen.dart';
-import '../listings/add_listing_screen.dart';
 import 'add_full_orchard_listing_screen.dart';
+import '../../../services/common/verification_service.dart';
+import '../../common/verification_screen.dart';
 
 class OrchardDetailScreen extends StatefulWidget {
   final OrchardModel orchard;
@@ -24,7 +22,6 @@ class OrchardDetailScreen extends StatefulWidget {
 
 class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
   final ListingService _listingService = ListingService();
-  bool _hasActiveListing = false;
   bool _hasActiveFullOrchardListing = false;
   bool _isCheckingListings = true;
 
@@ -42,9 +39,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
 
       if (mounted) {
         setState(() {
-          _hasActiveListing = listings.any(
-            (listing) => listing.listingType == 'produce',
-          );
+          // ✅ ONLY CHECK FOR FULL ORCHARD LISTINGS
           _hasActiveFullOrchardListing = listings.any(
             (listing) => listing.listingType == 'full_orchard',
           );
@@ -56,6 +51,57 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
         setState(() => _isCheckingListings = false);
       }
     }
+  }
+
+  Future<bool> _checkVerification() async {
+    String status = await VerificationService().getCurrentUserStatus();
+    if (status == 'verified') return true;
+
+    if (!mounted) return false;
+
+    String title = status == 'pending_approval'
+        ? "Verification Pending"
+        : "Verification Required";
+    String msg = status == 'pending_approval'
+        ? "Your documents are under review by Admin."
+        : "You must verify your identity to create listings.";
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          if (status == 'unverified' || status == 'rejected')
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VerificationScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                "Verify Now",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
+      ),
+    );
+    return false;
   }
 
   void _deleteOrchard(BuildContext context) async {
@@ -131,26 +177,15 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
     }
   }
 
-  void _createProduceListing() {
-    if (_hasActiveListing) {
-      _showAlreadyListedDialog('produce');
-      return;
-    }
+  void _createFullOrchardListing() async {
+    if (!await _checkVerification()) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            AddListingScreen(preSelectedOrchard: widget.orchard),
-      ),
-    ).then((_) => _checkActiveListings());
-  }
-
-  void _createFullOrchardListing() {
     if (_hasActiveFullOrchardListing) {
-      _showAlreadyListedDialog('full_orchard');
+      _showAlreadyListedDialog();
       return;
     }
+
+    if (!mounted) return;
 
     Navigator.push(
       context,
@@ -161,7 +196,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
     ).then((_) => _checkActiveListings());
   }
 
-  void _showAlreadyListedDialog(String type) {
+  void _showAlreadyListedDialog() {
     showDialog(
       context: context,
       builder: (context) => BackdropFilter(
@@ -186,11 +221,9 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
               ),
             ],
           ),
-          content: Text(
-            type == 'produce'
-                ? "This orchard already has an active produce listing. Please wait for it to expire or delete it before creating a new one."
-                : "This orchard already has an active full orchard listing. Please wait for it to expire or delete it before creating a new one.",
-            style: const TextStyle(height: 1.5, fontSize: 14),
+          content: const Text(
+            "This orchard already has an active full orchard listing. Please wait for it to expire or delete it before creating a new one.",
+            style: TextStyle(height: 1.5, fontSize: 14),
           ),
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
@@ -234,7 +267,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.green.shade100,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -310,7 +343,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
             child: FadeInUp(
               duration: const Duration(milliseconds: 600),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -319,21 +352,13 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: ShaderMask(
-                            shaderCallback: (bounds) => LinearGradient(
-                              colors: [
-                                Colors.green.shade900,
-                                Colors.green.shade700,
-                              ],
-                            ).createShader(bounds),
-                            child: Text(
-                              widget.orchard.name,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
+                          child: Text(
+                            widget.orchard.name,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade900,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
@@ -422,7 +447,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
                             child: _buildStatBox(
                               Iconsax.ruler,
                               "${widget.orchard.areaSize}",
-                              "Acres",
+                              "Area",
                               Colors.blue.shade50,
                               Colors.blue.shade700,
                             ),
@@ -521,34 +546,18 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 30),
 
+                    // ✅ ONLY ONE BUTTON NOW - SELL FULL ORCHARD
                     if (_isCheckingListings)
                       const Center(
                         child: CircularProgressIndicator(
                           color: Color(0xFF388E3C),
                         ),
                       )
-                    else ...[
+                    else
                       FadeInUp(
                         duration: const Duration(milliseconds: 1000),
-                        child: AnimatedButton(
-                          text: _hasActiveListing
-                              ? "Produce Listing Active"
-                              : "Create Produce Listing",
-                          icon: _hasActiveListing
-                              ? Iconsax.tick_circle
-                              : Iconsax.add_circle,
-                          onPressed: _createProduceListing,
-                          backgroundColor: _hasActiveListing
-                              ? Colors.grey.shade400
-                              : const Color(0xFF1976D2),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      FadeInUp(
-                        duration: const Duration(milliseconds: 1100),
                         child: AnimatedButton(
                           text: _hasActiveFullOrchardListing
                               ? "Full Orchard Listed"
@@ -562,9 +571,8 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
                               : Colors.green.shade700,
                         ),
                       ),
-                    ],
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -583,7 +591,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
     Color iconColor,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(16),
@@ -599,7 +607,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
       child: Column(
         children: [
           Icon(icon, color: iconColor, size: 28),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(

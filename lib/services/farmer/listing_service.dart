@@ -19,7 +19,7 @@ class ListingService {
     required String orchardId,
     required String orchardName,
     required String fruitType,
-    required String listingType, // ✅ NEW: "produce" or "full_orchard"
+    required String listingType, // ✅ "produce" or "full_orchard"
     required double quantity,
     required String unit,
     required double pricePerUnit,
@@ -30,7 +30,7 @@ class ListingService {
     DateTime? expiryDate,
     // ✅ NEW: Full Orchard Fields
     int? totalTrees,
-    double? areaSize,
+    String? areaSize, // ✅ CHANGED TO STRING
     String? orchardCondition,
     String? harvestSeason,
     int? expectedYield,
@@ -69,16 +69,16 @@ class ListingService {
         farmerId: user.uid,
         orchardName: orchardName,
         fruitType: fruitType,
-        listingType: listingType, // ✅ NEW
+        listingType: listingType,
         quantity: quantity,
         unit: unit,
         pricePerUnit: pricePerUnit,
         totalPrice: totalPrice,
-        totalTrees: totalTrees, // ✅ NEW
-        areaSize: areaSize, // ✅ NEW
-        orchardCondition: orchardCondition, // ✅ NEW
-        harvestSeason: harvestSeason, // ✅ NEW
-        expectedYield: expectedYield, // ✅ NEW
+        totalTrees: totalTrees,
+        areaSize: areaSize, // ✅ NOW STRING
+        orchardCondition: orchardCondition,
+        harvestSeason: harvestSeason,
+        expectedYield: expectedYield,
         imageUrls: finalImageUrls,
         description: description,
         status: 'available',
@@ -100,7 +100,7 @@ class ListingService {
     }
   }
 
-  // ✅ NEW: Quick Create FULL ORCHARD Listing
+  // ✅ FIXED: Quick Create FULL ORCHARD Listing
   Future<void> createFullOrchardListing({
     required OrchardModel orchard,
     required double totalPrice,
@@ -115,15 +115,15 @@ class ListingService {
       orchardId: orchard.id,
       orchardName: orchard.name,
       fruitType: orchard.fruitType,
-      listingType: 'full_orchard', // ✅ MARK AS FULL ORCHARD
-      quantity: 1, // 1 orchard
+      listingType: 'full_orchard',
+      quantity: 1,
       unit: 'orchard',
       pricePerUnit: totalPrice,
       description: description,
       newImages: images,
       location: orchard.location,
-      totalTrees: orchard.totalTrees, // ✅ FROM ORCHARD
-      areaSize: orchard.areaSize, // ✅ FROM ORCHARD
+      totalTrees: orchard.totalTrees,
+      areaSize: orchard.areaSize, // ✅ NOW STRING - NO ERROR!
       orchardCondition: orchardCondition,
       harvestSeason: harvestSeason,
       expectedYield: expectedYield,
@@ -223,36 +223,37 @@ class ListingService {
       throw Exception("Failed to delete listing: $e");
     }
   }
-  // Add this method to your existing ListingService class
 
-// ✅ NEW: Get active listings for a specific orchard
-Future<List<ListingModel>> getActiveListingsByOrchard(String orchardId) async {
-  try {
-    QuerySnapshot snapshot = await _firestore
-        .collection('Orchard_Listings')
-        .where('orchardId', isEqualTo: orchardId)
-        .where('status', isEqualTo: 'available')
-        .get();
+  // ✅ NEW: Get active listings for a specific orchard
+  Future<List<ListingModel>> getActiveListingsByOrchard(
+    String orchardId,
+  ) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('Orchard_Listings')
+          .where('orchardId', isEqualTo: orchardId)
+          .where('status', isEqualTo: 'available')
+          .get();
 
-    List<ListingModel> listings = [];
-    
-    for (var doc in snapshot.docs) {
-      ListingModel listing = ListingModel.fromMap(
-        doc.data() as Map<String, dynamic>,
-        doc.id,
-      );
-      
-      // Check if not expired
-      if (!listing.isExpired) {
-        listings.add(listing);
+      List<ListingModel> listings = [];
+
+      for (var doc in snapshot.docs) {
+        ListingModel listing = ListingModel.fromMap(
+          doc.data() as Map<String, dynamic>,
+          doc.id,
+        );
+
+        // Check if not expired
+        if (!listing.isExpired) {
+          listings.add(listing);
+        }
       }
+
+      return listings;
+    } catch (e) {
+      throw Exception("Failed to fetch active listings: $e");
     }
-    
-    return listings;
-  } catch (e) {
-    throw Exception("Failed to fetch active listings: $e");
   }
-}
 
   // Get Available Listings Count for Dashboard
   Future<int> getActiveListingsCount() async {

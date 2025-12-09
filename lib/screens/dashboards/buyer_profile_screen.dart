@@ -1,4 +1,3 @@
-// COMPLETE FILE: lib/screens/dashboards/buyer_profile_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +6,11 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:animate_do/animate_do.dart';
+
+// ✅ NEW IMPORTS
+import '../../services/common/verification_service.dart';
+import '../../screens/common/verification_screen.dart';
+import '../../widgets/common/loading_indicator.dart'; // Import your custom indicator
 
 class BuyerProfileScreen extends StatefulWidget {
   const BuyerProfileScreen({super.key});
@@ -42,9 +46,12 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
   String businessType = "Individual";
   String companyName = "";
 
-  // 🔥 STATS VARIABLES (Renamed for clarity)
+  // 🔥 STATS VARIABLES
   int completedOrders = 0;
   int pendingOrders = 0;
+
+  // ✅ NEW: Verification Status Variable
+  String verificationStatus = 'unverified';
 
   late TextEditingController phoneController;
   late TextEditingController locationController;
@@ -77,182 +84,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     super.dispose();
   }
 
-  // 🔥 LOAD PROFILE + CALCULATE STATS
-  Future<void> _loadProfileData() async {
-    setState(() => _isLoading = true);
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      // 1. Get User Basic Info (Name/Email/Phone)
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(user.uid)
-          .get();
-
-      if (userDoc.exists) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        name = userData['name'] ?? '';
-        email = userData['email'] ?? '';
-        phoneNumber = userData['phoneNumber'] ?? '';
-        phoneController.text = phoneNumber;
-      }
-
-      // 2. Get Buyer Profile Info
-      DocumentSnapshot profileDoc = await FirebaseFirestore.instance
-          .collection('Buyer_Profiles')
-          .doc(user.uid)
-          .get();
-
-      if (profileDoc.exists) {
-        final profileData = profileDoc.data() as Map<String, dynamic>;
-        profileImage = profileData['profileImage'];
-        location = profileData['location'] ?? '';
-        bio = profileData['bio'] ?? '';
-        businessType = profileData['businessType'] ?? 'Individual';
-        companyName = profileData['companyName'] ?? '';
-
-        locationController.text = location;
-        bioController.text = bio;
-        companyController.text = companyName;
-      } else {
-        await _createDefaultProfile(user.uid);
-      }
-
-      // 3. Calculate Orders (Completed vs Pending)
-      await _calculateOrderStats(user.uid);
-
-    } catch (e) {
-      debugPrint('Error loading profile: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // 🔥 LOGIC: Completed = delivered/completed, Pending = pending/confirmed/shipped/processing
-  Future<void> _calculateOrderStats(String buyerId) async {
-    try {
-      QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
-          .collection('Order_Requests')
-          .where('buyerId', isEqualTo: buyerId)
-          .get();
-
-      int completed = 0;
-      int pending = 0;
-
-      for (var doc in orderSnapshot.docs) {
-        String status = (doc['status'] ?? '').toString().toLowerCase();
-
-        // Check Logic
-        if (status == 'delivered' || status == 'completed') {
-          completed++;
-        } else if (status == 'pending' || 
-                   status == 'confirmed' || 
-                   status == 'payment_pending' || 
-                   status == 'processing' || 
-                   status == 'shipped') {
-          pending++;
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          completedOrders = completed;
-          pendingOrders = pending;
-        });
-      }
-
-      // Optional: Update Firestore cache
-      await FirebaseFirestore.instance
-          .collection('Buyer_Profiles')
-          .doc(buyerId)
-          .update({
-            'completedOrders': completed,
-            'pendingOrders': pending,
-            'lastUpdated': FieldValue.serverTimestamp(),
-          });
-
-    } catch (e) {
-      debugPrint('Error calculating stats: $e');
-    }
-  }
-
-  Future<void> _createDefaultProfile(String userId) async {
-    await FirebaseFirestore.instance
-        .collection('Buyer_Profiles')
-        .doc(userId)
-        .set({
-          'buyerId': userId,
-          'profileImage': null,
-          'location': '',
-          'bio': '',
-          'businessType': 'Individual',
-          'companyName': '',
-          'completedOrders': 0,
-          'pendingOrders': 0,
-          'joinedDate': FieldValue.serverTimestamp(),
-          'lastUpdated': FieldValue.serverTimestamp(),
-        });
-  }
-
-  Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      await FirebaseFirestore.instance
-          .collection('Buyer_Profiles')
-          .doc(user.uid)
-          .update({
-            'location': locationController.text.trim(),
-            'bio': bioController.text.trim(),
-            'businessType': businessType,
-            'companyName': companyController.text.trim(),
-            'lastUpdated': FieldValue.serverTimestamp(),
-          });
-
-      if (phoneController.text.trim() != phoneNumber) {
-        await FirebaseFirestore.instance
-            .collection('Users')
-            .doc(user.uid)
-            .update({'phoneNumber': phoneController.text.trim()});
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: statusSuccess,
-          ),
-        );
-
-        setState(() {
-          location = locationController.text.trim();
-          bio = bioController.text.trim();
-          companyName = companyController.text.trim();
-          phoneNumber = phoneController.text.trim();
-          _isEditing = false;
-          _isSaving = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error saving: $e');
-      if (mounted) {
-        setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
+  // ✨ Show Camera/Gallery Options Bottom Sheet
   void _showImageSourceOptions() {
     showModalBottomSheet(
       context: context,
@@ -368,6 +200,189 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     }
   }
 
+  // 🔥 LOAD PROFILE + CALCULATE STATS + VERIFICATION
+  Future<void> _loadProfileData() async {
+    setState(() => _isLoading = true);
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // 1. ✅ Get Verification Status First (Fixes flashing)
+      String status = await VerificationService().getCurrentUserStatus();
+
+      // 2. Get User Basic Info (Name/Email/Phone)
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(user.uid)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        name = userData['name'] ?? '';
+        email = userData['email'] ?? '';
+        phoneNumber = userData['phoneNumber'] ?? '';
+        phoneController.text = phoneNumber;
+      }
+
+      // 3. Get Buyer Profile Info
+      DocumentSnapshot profileDoc = await FirebaseFirestore.instance
+          .collection('Buyer_Profiles')
+          .doc(user.uid)
+          .get();
+
+      if (profileDoc.exists) {
+        final profileData = profileDoc.data() as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            verificationStatus = status; // ✅ Update Status
+            profileImage = profileData['profileImage'];
+            location = profileData['location'] ?? '';
+            bio = profileData['bio'] ?? '';
+            businessType = profileData['businessType'] ?? 'Individual';
+            companyName = profileData['companyName'] ?? '';
+
+            locationController.text = location;
+            bioController.text = bio;
+            companyController.text = companyName;
+          });
+        }
+      } else {
+        await _createDefaultProfile(user.uid);
+      }
+
+      // 4. Calculate Orders
+      await _calculateOrderStats(user.uid);
+    } catch (e) {
+      debugPrint('Error loading profile: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // 🔥 LOGIC: Calculate Order Stats
+  Future<void> _calculateOrderStats(String buyerId) async {
+    try {
+      QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
+          .collection('Order_Requests')
+          .where('buyerId', isEqualTo: buyerId)
+          .get();
+
+      int completed = 0;
+      int pending = 0;
+
+      for (var doc in orderSnapshot.docs) {
+        String status = (doc['status'] ?? '').toString().toLowerCase();
+
+        if (status == 'delivered' || status == 'completed') {
+          completed++;
+        } else if (status == 'pending' ||
+            status == 'confirmed' ||
+            status == 'payment_pending' ||
+            status == 'processing' ||
+            status == 'shipped') {
+          pending++;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          completedOrders = completed;
+          pendingOrders = pending;
+        });
+      }
+
+      await FirebaseFirestore.instance
+          .collection('Buyer_Profiles')
+          .doc(buyerId)
+          .update({
+            'completedOrders': completed,
+            'pendingOrders': pending,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      debugPrint('Error calculating stats: $e');
+    }
+  }
+
+  Future<void> _createDefaultProfile(String userId) async {
+    await FirebaseFirestore.instance
+        .collection('Buyer_Profiles')
+        .doc(userId)
+        .set({
+          'buyerId': userId,
+          'profileImage': null,
+          'location': '',
+          'bio': '',
+          'businessType': 'Individual',
+          'companyName': '',
+          'completedOrders': 0,
+          'pendingOrders': 0,
+          'joinedDate': FieldValue.serverTimestamp(),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      await FirebaseFirestore.instance
+          .collection('Buyer_Profiles')
+          .doc(user.uid)
+          .update({
+            'location': locationController.text.trim(),
+            'bio': bioController.text.trim(),
+            'businessType': businessType,
+            'companyName': companyController.text.trim(),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
+
+      if (phoneController.text.trim() != phoneNumber) {
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(user.uid)
+            .update({'phoneNumber': phoneController.text.trim()});
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: statusSuccess,
+          ),
+        );
+
+        setState(() {
+          location = locationController.text.trim();
+          bio = bioController.text.trim();
+          companyName = companyController.text.trim();
+          phoneNumber = phoneController.text.trim();
+          _isEditing = false;
+          _isSaving = false;
+        });
+
+        // Reload data to reflect any changes
+        _loadProfileData();
+      }
+    } catch (e) {
+      debugPrint('Error saving: $e');
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -414,11 +429,9 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
-        body: const Center(
-          child: CircularProgressIndicator(color: primaryMain),
-        ),
+      // ✅ CHANGED: Used your custom LoadingIndicator here
+      return const Scaffold(
+        body: LoadingIndicator(message: 'Loading Profile...'),
       );
     }
 
@@ -471,6 +484,33 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                                         ? Image.network(
                                             profileImage!,
                                             fit: BoxFit.cover,
+                                            // ✅ ADDED: Image loading logic similar to Farmer
+                                            loadingBuilder:
+                                                (
+                                                  context,
+                                                  child,
+                                                  loadingProgress,
+                                                ) {
+                                                  if (loadingProgress == null) {
+                                                    return child;
+                                                  }
+                                                  return const SizedBox(
+                                                    width: 40,
+                                                    height: 40,
+                                                    child: LoadingIndicator(
+                                                      color: primaryMain,
+                                                      // No message to keep it small in the circle
+                                                    ),
+                                                  );
+                                                },
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return const Icon(
+                                                    Icons.error,
+                                                    color: Colors.red,
+                                                    size: 40,
+                                                  );
+                                                },
                                           )
                                         : const Icon(
                                             Iconsax.user,
@@ -510,16 +550,38 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
+
+                      // ✅ NAME WITH BLUE TICK Logic
                       FadeIn(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (verificationStatus == 'verified') ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                ),
+                                child: const Icon(
+                                  Icons.verified,
+                                  color: Color.fromARGB(255, 24, 220, 80),
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
+
                       const SizedBox(height: 4),
                       FadeIn(
                         delay: const Duration(milliseconds: 100),
@@ -543,7 +605,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
               ),
             ],
           ),
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -552,14 +613,13 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 🔥 STATS CARDS (Completed / Pending)
                     FadeInUp(
                       child: Row(
                         children: [
                           Expanded(
                             child: _buildStatCard(
-                              icon: Iconsax.tick_circle, // Changed Icon
-                              label: 'Completed',        // Changed Label
+                              icon: Iconsax.tick_circle,
+                              label: 'Completed',
                               value: completedOrders.toString(),
                               color: statusSuccess,
                             ),
@@ -577,6 +637,70 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+
+                    // ✅ VERIFICATION STATUS BANNER (CONDITIONAL)
+                    if (verificationStatus != 'verified')
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: verificationStatus == 'pending_approval'
+                              ? Colors.orange.shade50
+                              : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: verificationStatus == 'pending_approval'
+                                ? Colors.orange
+                                : Colors.red,
+                          ),
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            verificationStatus == 'pending_approval'
+                                ? Iconsax.clock
+                                : Iconsax.shield_security,
+                            color: verificationStatus == 'pending_approval'
+                                ? Colors.orange
+                                : Colors.red,
+                          ),
+                          title: Text(
+                            verificationStatus == 'pending_approval'
+                                ? "Verification Pending"
+                                : "Identity Unverified",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            verificationStatus == 'pending_approval'
+                                ? "Admin is reviewing your documents."
+                                : "Verify identity to place orders.",
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          trailing: verificationStatus == 'pending_approval'
+                              ? null
+                              : ElevatedButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const VerificationScreen(),
+                                    ),
+                                  ).then((_) => _loadProfileData()),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                  ),
+                                  child: const Text("Verify"),
+                                ),
+                        ),
+                      ),
+
+                    // ✅ END VERIFICATION SECTION
+
                     const Text(
                       'Buyer Information',
                       style: TextStyle(
@@ -849,7 +973,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
           controller: controller,
           validator: validator,
           maxLines: maxLines,
-          // 🔥 FIXED TYPO: InputDecoration
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon, color: primaryMain),
@@ -908,10 +1031,10 @@ class _ImageSourceOption extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: Color(0xFF1B5E20),
               ),
             ),
           ],

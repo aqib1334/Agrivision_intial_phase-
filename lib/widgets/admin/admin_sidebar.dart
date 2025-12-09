@@ -1,6 +1,6 @@
 // ============================================================================
 // FILE: lib/widgets/admin/admin_sidebar.dart
-// ============================================================================
+
 // Fixed sidebar with lighter green and collapse/expand functionality
 
 import 'package:flutter/material.dart';
@@ -122,6 +122,9 @@ class AdminSidebar extends StatelessWidget {
                   _buildMenuItem(2, 'Listings', Iconsax.box),
                   _buildMenuItem(3, 'Orders', Iconsax.shopping_cart),
                   _buildMenuItem(4, 'Analytics', Iconsax.chart),
+                  
+                  // ✅ NEW: Verification Requests Menu Item
+                  _buildMenuItem(5, 'Requests', Iconsax.verify),
                 ],
               ),
             ),

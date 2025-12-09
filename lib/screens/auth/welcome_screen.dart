@@ -17,8 +17,8 @@ class WelcomeScreen extends StatelessWidget {
             colors: [
               Colors.green.shade800,
               Colors.green.shade600,
+              Colors.green.shade500,
               Colors.green.shade400,
-              Colors.green.shade200,
             ],
           ),
         ),
@@ -168,7 +168,7 @@ class WelcomeScreen extends StatelessWidget {
                             duration: const Duration(milliseconds: 1000),
                             delay: const Duration(milliseconds: 1200),
                             child: Text(
-                              'Powered by AI & Cloud Technology',
+                              'Powered by AI for Smarter Farming',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 11,

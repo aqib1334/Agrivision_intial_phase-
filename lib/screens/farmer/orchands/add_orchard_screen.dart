@@ -10,7 +10,7 @@ import '../../../widgets/common/custom_button.dart';
 import '../../../widgets/common/loading_indicator.dart';
 
 class AddOrchardScreen extends StatefulWidget {
-  final OrchardModel? orchard; // Agar null hai to "Add", agar hai to "Edit"
+  final OrchardModel? orchard;
 
   const AddOrchardScreen({super.key, this.orchard});
 
@@ -38,7 +38,6 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill data if editing
     _nameController = TextEditingController(text: widget.orchard?.name ?? '');
     _fruitTypeController = TextEditingController(
       text: widget.orchard?.fruitType ?? '',
@@ -46,6 +45,7 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
     _locationController = TextEditingController(
       text: widget.orchard?.location ?? '',
     );
+    // ✅ FIXED: Area ab string hai instead of double
     _areaController = TextEditingController(
       text: widget.orchard?.areaSize.toString() ?? '',
     );
@@ -61,7 +61,18 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
     _existingImages = widget.orchard?.imageUrls ?? [];
   }
 
-  // Image Picker (Camera or Gallery)
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _fruitTypeController.dispose();
+    _locationController.dispose();
+    _areaController.dispose();
+    _treesController.dispose();
+    _priceController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     if (source == ImageSource.gallery) {
@@ -119,20 +130,14 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
 
   void _saveOrchard() async {
     if (_formKey.currentState!.validate()) {
-      // if (_newImages.isEmpty && _existingImages.isEmpty) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text('Please add at least one image')),
-      //   );
-      //   return;
-      // }
-
       setState(() => _isLoading = true);
       try {
+        // ✅ FIXED: Direct string send (e.g., "4 Kanal", "50 Acres")
         await _orchardService.saveOrchard(
-          id: widget.orchard?.id, // Pass ID for edit
+          id: widget.orchard?.id,
           name: _nameController.text.trim(),
           location: _locationController.text.trim(),
-          area: double.parse(_areaController.text.trim()),
+          area: _areaController.text.trim(), // ✅ String as-is
           fruitType: _fruitTypeController.text.trim(),
           totalTrees: int.parse(_treesController.text.trim()),
           expectedPrice: double.parse(_priceController.text.trim()),
@@ -243,11 +248,11 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
                       children: [
                         Expanded(
                           child: _buildTextField(
-                            "Area (Acres)",
+                            "Area",
                             _areaController,
                             Iconsax.ruler,
-                            "50",
-                            isNumber: true,
+                            "e.g. 50 Acres, 4 Kanal", // ✅ FIXED: String input
+                            isNumber: false, // ✅ Changed to false
                           ),
                         ),
                         const SizedBox(width: 15),
@@ -279,7 +284,8 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
                       maxLines: 3,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24), // ✅ FIXED: Reduced from 20
+
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -290,6 +296,9 @@ class _AddOrchardScreenState extends State<AddOrchardScreen> {
                         textColor: Colors.white,
                       ),
                     ),
+                    const SizedBox(
+                      height: 16,
+                    ), // ✅ FIXED: Bottom padding reduced
                   ],
                 ),
               ),

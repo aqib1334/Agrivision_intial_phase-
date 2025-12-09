@@ -12,12 +12,12 @@ class OrchardService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // 1. Add or Update Orchard
+  // 1. ✅ FIXED: Add or Update Orchard (String area support)
   Future<void> saveOrchard({
     String? id,
     required String name,
     required String location,
-    required double area,
+    required String area, // ✅ Changed to String
     required String fruitType,
     required int totalTrees,
     required double expectedPrice,
@@ -55,7 +55,7 @@ class OrchardService {
         name: name,
         location: location,
         fruitType: fruitType,
-        areaSize: area,
+        areaSize: area, // ✅ Now accepts String
         totalTrees: totalTrees,
         imageUrls: finalImageUrls,
         expectedPrice: expectedPrice,
@@ -111,10 +111,10 @@ class OrchardService {
     }
   }
 
-  // 4. ✅ FIXED: Delete Orchard WITH All Related Listings
+  // 4. Delete Orchard WITH All Related Listings
   Future<void> deleteOrchard(String orchardId) async {
     try {
-      // ✅ STEP 1: Delete orchard images from Storage
+      // STEP 1: Delete orchard images from Storage
       DocumentSnapshot orchardDoc = await _firestore
           .collection('Orchards')
           .doc(orchardId)
@@ -134,13 +134,13 @@ class OrchardService {
         }
       }
 
-      // ✅ STEP 2: Get all listings related to this orchard
+      // STEP 2: Get all listings related to this orchard
       QuerySnapshot listingsSnapshot = await _firestore
           .collection('Orchard_Listings')
           .where('orchardId', isEqualTo: orchardId)
           .get();
 
-      // ✅ STEP 3: Delete each listing and its images
+      // STEP 3: Delete each listing and its images
       for (var listingDoc in listingsSnapshot.docs) {
         final listingData = listingDoc.data() as Map<String, dynamic>;
         List<String> listingImages = List<String>.from(listingData['imageUrls'] ?? []);
@@ -158,10 +158,10 @@ class OrchardService {
         await listingDoc.reference.delete();
       }
 
-      // ✅ STEP 4: Delete orchard document
+      // STEP 4: Delete orchard document
       await _firestore.collection('Orchards').doc(orchardId).delete();
       
-      // ✅ STEP 5: Update profile stats
+      // STEP 5: Update profile stats
       await _updateProfileStats();
       
       print('✅ Orchard deleted with ${listingsSnapshot.docs.length} listings');

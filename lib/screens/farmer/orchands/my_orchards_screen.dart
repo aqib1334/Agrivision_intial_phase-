@@ -6,9 +6,9 @@ import '../../../models/orchard_model.dart';
 import '../../../services/farmer/orchard_service.dart';
 import '../../../widgets/common/loading_indicator.dart';
 import '../../../widgets/common/empty_state_widget.dart';
-// import '../../../widgets/common/animated_button.dart';
 import 'add_orchard_screen.dart';
 import 'orchard_detail_screen.dart';
+import '../../dashboards/farmer_home_screen.dart'; // ✅ ADDED
 
 class MyOrchardsScreen extends StatelessWidget {
   const MyOrchardsScreen({super.key});
@@ -22,6 +22,17 @@ class MyOrchardsScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.green.shade700,
+        // ✅ FIXED: Custom back button
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const FarmerHomeScreen()),
+              (route) => false, // Remove all previous routes
+            );
+          },
+        ),
         title: ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
             colors: [Colors.white, Color(0xFFE8F5E9)],
@@ -198,7 +209,7 @@ class _EnhancedOrchardCard extends StatelessWidget {
               ),
               child: thumbnailImage != null && thumbnailImage!.isNotEmpty
                   ? Image.network(
-                      thumbnailImage!, // ✅ Added ! to assert non-null
+                      thumbnailImage!,
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -269,7 +280,7 @@ class _EnhancedOrchardCard extends StatelessWidget {
                     children: [
                       _buildStatChip(
                         Iconsax.ruler,
-                        "${orchard.areaSize} Acres",
+                        "${orchard.areaSize}", // ✅ Display string as-is
                         Colors.blue.shade50,
                         Colors.blue.shade700,
                       ),

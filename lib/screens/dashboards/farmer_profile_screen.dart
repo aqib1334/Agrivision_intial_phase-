@@ -1,4 +1,3 @@
-// lib/screens/dashboards/farmer_profile_screen.dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +6,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:animate_do/animate_do.dart';
+
+// ✅ NEW IMPORTS FOR VERIFICATION
+import '../../services/common/verification_service.dart';
+import '../../screens/common/verification_screen.dart';
 
 class FarmerProfileScreen extends StatefulWidget {
   const FarmerProfileScreen({super.key});
@@ -43,6 +46,9 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   double rating = 0.0;
   int totalOrchards = 0;
   int totalListings = 0;
+
+  // ✅ NEW: Verification Status Variable
+  String verificationStatus = 'unverified';
 
   // Controllers
   late TextEditingController phoneController;
@@ -110,7 +116,6 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Camera Option
                 _ImageSourceOption(
                   icon: Iconsax.camera,
                   label: 'Camera',
@@ -119,7 +124,6 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                     _pickAndUploadImage(ImageSource.camera);
                   },
                 ),
-                // Gallery Option
                 _ImageSourceOption(
                   icon: Iconsax.gallery,
                   label: 'Gallery',
@@ -137,7 +141,6 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
     );
   }
 
-  // --- UNIVERSAL UPLOAD FUNCTION (Updated to accept ImageSource) ---
   Future<void> _pickAndUploadImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -205,6 +208,9 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
+      // 1. ✅ Get Verification Status First
+      String status = await VerificationService().getCurrentUserStatus();
+
       // Fetch from Users Collection
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('Users')
@@ -229,6 +235,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
         final profileData = profileDoc.data() as Map<String, dynamic>;
         if (mounted) {
           setState(() {
+            verificationStatus = status; // ✅ Set Status
             profileImage = profileData['profileImage'];
             location = profileData['location'] ?? '';
             totalArea = profileData['totalArea'] ?? '';
@@ -487,16 +494,38 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      
+                      // ✅ NAME WITH BLUE TICK Logic
                       FadeIn(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (verificationStatus == 'verified') ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color.fromARGB(255, 236, 236, 236),
+                                ),
+                                child: const Icon(
+                                  Icons.verified,
+                                  color: Color.fromARGB(255, 2, 127, 6),
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
+
                       const SizedBox(height: 4),
                       FadeIn(
                         delay: const Duration(milliseconds: 100),
@@ -552,6 +581,71 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+
+                    // ✅ VERIFICATION STATUS BANNER (CONDITIONAL)
+                    // Sirf tab dikhega agar Verified NAHI hai
+                    if (verificationStatus != 'verified')
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: verificationStatus == 'pending_approval'
+                              ? Colors.orange.shade50
+                              : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: verificationStatus == 'pending_approval'
+                                ? Colors.orange
+                                : Colors.red,
+                          ),
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            verificationStatus == 'pending_approval'
+                                ? Iconsax.clock
+                                : Iconsax.shield_security,
+                            color: verificationStatus == 'pending_approval'
+                                ? Colors.orange
+                                : Colors.red,
+                          ),
+                          title: Text(
+                            verificationStatus == 'pending_approval'
+                                ? "Verification Pending"
+                                : "Identity Unverified",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            verificationStatus == 'pending_approval'
+                                ? "Admin is reviewing your documents."
+                                : "Verify identity to unlock listings.",
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          trailing: verificationStatus == 'pending_approval'
+                              ? null
+                              : ElevatedButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const VerificationScreen(),
+                                    ),
+                                  ).then((_) => _loadProfileData()),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                  ),
+                                  child: const Text("Verify"),
+                                ),
+                        ),
+                      ),
+
+                    // ✅ END VERIFICATION SECTION
+
                     const Text(
                       'Basic Information',
                       style: TextStyle(
@@ -808,7 +902,6 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   }
 }
 
-// ✨ Custom Widget for Image Source Option
 class _ImageSourceOption extends StatelessWidget {
   final IconData icon;
   final String label;

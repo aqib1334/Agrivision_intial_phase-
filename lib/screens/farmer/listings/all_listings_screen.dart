@@ -22,7 +22,7 @@ class AllListingsScreen extends StatelessWidget {
     final OrchardService orchardService = OrchardService();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Colors.green.shade50,
       body: StreamBuilder<List<ListingModel>>(
         stream: listingService.getMyListings(),
         builder: (context, snapshot) {
