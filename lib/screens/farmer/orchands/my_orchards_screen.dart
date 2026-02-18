@@ -18,7 +18,7 @@ class MyOrchardsScreen extends StatelessWidget {
     final OrchardService orchardService = OrchardService();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Colors.green.shade50,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.green.shade700,

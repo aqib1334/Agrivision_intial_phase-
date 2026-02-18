@@ -87,11 +87,6 @@ class _LoginScreenState extends State<LoginScreen>
 
       String uid = userCredential.user!.uid;
 
-      // Check if user verified their email in Firebase Auth
-      await userCredential.user!.reload();
-      bool firebaseEmailVerified =
-          FirebaseAuth.instance.currentUser!.emailVerified;
-
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('Users')
           .doc(uid)
@@ -100,6 +95,21 @@ class _LoginScreenState extends State<LoginScreen>
       if (!userDoc.exists) {
         throw Exception("User profile not found in database.");
       }
+
+      String role = userDoc['role'];
+
+      // ✅ ADMIN KO DIRECT ACCESS - Email Verification Skip
+      if (role == 'admin') {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/adminHome');
+        }
+        return; // Admin ke liye yahan se exit kar jao
+      }
+
+      // 🔒 Farmer aur Buyer ke liye Email Verification Check
+      await userCredential.user!.reload();
+      bool firebaseEmailVerified =
+          FirebaseAuth.instance.currentUser!.emailVerified;
 
       bool firestoreEmailVerified = userDoc['emailVerified'] ?? false;
 
@@ -131,15 +141,12 @@ class _LoginScreenState extends State<LoginScreen>
         return;
       }
 
-      String role = userDoc['role'];
-
+      // Navigate verified Farmer and Buyer users
       if (mounted) {
         if (role == 'farmer') {
           Navigator.pushReplacementNamed(context, '/farmerHome');
         } else if (role == 'buyer') {
           Navigator.pushReplacementNamed(context, '/buyerHome');
-        } else if (role == 'admin') {
-          Navigator.pushReplacementNamed(context, '/adminHome');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -168,9 +175,9 @@ class _LoginScreenState extends State<LoginScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             backgroundColor: Colors.red,
-            content: Text('An unexpected error occurred. Please try again.'),
+            content: Text('An unexpected error occurred: ${e.toString()}'),
           ),
         );
       }
@@ -406,7 +413,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
 
-          // ✨ Loading Overlay - Sirf yeh add kiya hai
+          // ✨ Loading Overlay
           if (_isLoading)
             Container(
               color: Colors.green.shade50,

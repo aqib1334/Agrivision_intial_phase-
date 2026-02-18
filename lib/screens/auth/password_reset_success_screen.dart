@@ -251,7 +251,7 @@ class PasswordResetSuccessScreen extends StatelessWidget {
                           "Didn't receive the email? Try again",
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.white,
+                            color: Color.fromARGB(255, 32, 25, 25),
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
                           ),

@@ -1,3 +1,6 @@
+// ✅ COMPLETE FILE: lib/screens/farmer/orchard_detail_screen.dart
+// ✅ UPDATED: Uses Custom LoadingIndicator inside Delete Button
+
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:animate_do/animate_do.dart';
@@ -10,6 +13,7 @@ import 'add_orchard_screen.dart';
 import 'add_full_orchard_listing_screen.dart';
 import '../../../services/common/verification_service.dart';
 import '../../common/verification_screen.dart';
+import '../../../widgets/common/loading_indicator.dart'; // ✅ Imported Custom Indicator
 
 class OrchardDetailScreen extends StatefulWidget {
   final OrchardModel orchard;
@@ -39,7 +43,6 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
 
       if (mounted) {
         setState(() {
-          // ✅ ONLY CHECK FOR FULL ORCHARD LISTINGS
           _hasActiveFullOrchardListing = listings.any(
             (listing) => listing.listingType == 'full_orchard',
           );
@@ -104,77 +107,139 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
     return false;
   }
 
-  void _deleteOrchard(BuildContext context) async {
-    bool? confirm = await showDialog(
+  // ✅ UPDATED DELETE FUNCTION: Uses Custom LoadingIndicator
+  void _deleteOrchard(BuildContext context) {
+    showDialog(
       context: context,
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Icon(Iconsax.danger, color: Colors.red.shade600, size: 24),
-              const SizedBox(width: 10),
-              const Text(
-                "Delete Orchard?",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: const Text(
-            "This action cannot be undone. Are you sure you want to delete this orchard?",
-            style: TextStyle(height: 1.5, fontSize: 14),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-              child: const Text("Cancel", style: TextStyle(fontSize: 15)),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                "Delete",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool isDeleting = false;
 
-    if (confirm == true) {
-      await OrchardService().deleteOrchard(widget.orchard.id);
-      if (context.mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Orchard deleted successfully"),
-            backgroundColor: Colors.red,
-          ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: Row(
+                  children: [
+                    Icon(Iconsax.danger, color: Colors.red.shade600, size: 24),
+                    const SizedBox(width: 10),
+                    const Text(
+                      "Delete Orchard?",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                content: const Text(
+                  "This action cannot be undone. Are you sure you want to delete this orchard?",
+                  style: TextStyle(height: 1.5, fontSize: 14),
+                ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                actions: [
+                  TextButton(
+                    onPressed: isDeleting
+                        ? null
+                        : () => Navigator.pop(dialogContext),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Text(
+                      "Cancel",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isDeleting ? Colors.grey : Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  
+                  // ✅ DELETE BUTTON with Custom Loading Indicator
+                  ElevatedButton(
+                    onPressed: isDeleting
+                        ? null
+                        : () async {
+                            setState(() {
+                              isDeleting = true;
+                            });
+
+                            try {
+                              await OrchardService().deleteOrchard(
+                                widget.orchard.id,
+                              );
+
+                              if (mounted) {
+                                Navigator.pop(dialogContext);
+                                Navigator.pop(this.context);
+
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Orchard deleted successfully",
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() {
+                                  isDeleting = false;
+                                });
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Error: $e"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.red.shade300,
+                      disabledForegroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: isDeleting
+                        ? const SizedBox(
+                            width: 24, // Thoda size adjust kiya taake fit ho
+                            height: 24,
+                            child: FittedBox(
+                              // ✅ Custom Loading Indicator Used Here
+                              child: LoadingIndicator(color: Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            "Delete",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
-      }
-    }
+      },
+    );
   }
 
   void _createFullOrchardListing() async {
@@ -267,13 +332,13 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green.shade100,
+      backgroundColor: Colors.green.shade50,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: const Color.fromARGB(255, 157, 214, 159),
             actions: [
               FadeIn(
                 duration: const Duration(milliseconds: 600),
@@ -459,7 +524,7 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
                               "Healthy",
                               "Status",
                               Colors.orange.shade50,
-                              Colors.orange.shade700,
+                              const Color.fromARGB(255, 8, 192, 23),
                             ),
                           ),
                         ],
@@ -548,7 +613,6 @@ class _OrchardDetailScreenState extends State<OrchardDetailScreen> {
 
                     const SizedBox(height: 30),
 
-                    // ✅ ONLY ONE BUTTON NOW - SELL FULL ORCHARD
                     if (_isCheckingListings)
                       const Center(
                         child: CircularProgressIndicator(

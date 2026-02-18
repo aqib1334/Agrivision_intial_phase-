@@ -1,5 +1,4 @@
 // lib/screens/buyer/browse_listings_screen.dart
-// ✅ PADDING FIXED - Logic unchanged
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:iconsax/iconsax.dart';
@@ -58,7 +57,7 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Browse Listings',
+                      'Browse Orchards',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -67,7 +66,7 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Find fresh produce & full orchards',
+                      'Find full orchards for sale',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,
@@ -112,16 +111,10 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Filter Chips
+                    // ✅ REMOVED PRODUCE FILTER - ONLY SHOW ALL AND FULL ORCHARD
                     Row(
                       children: [
                         _buildFilterChip('All', 'all', Iconsax.box),
-                        const SizedBox(width: 8),
-                        _buildFilterChip(
-                          'Produce',
-                          'produce',
-                          Iconsax.shopping_bag,
-                        ),
                         const SizedBox(width: 8),
                         _buildFilterChip(
                           'Full Orchard',
@@ -176,7 +169,7 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
                       child: EmptyStateWidget(
                         icon: Iconsax.box,
                         title: 'No Listings Available',
-                        message: 'Check back later for fresh produce',
+                        message: 'Check back later for orchards',
                       ),
                     );
                   }
@@ -192,8 +185,9 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
                         if (listing.isExpired) return false;
                         if (listing.status == 'sold') return false;
 
-                        if (_selectedFilter != 'all') {
-                          if (listing.listingType != _selectedFilter)
+                        // ✅ ONLY SHOW FULL ORCHARD LISTINGS
+                        if (_selectedFilter == 'full_orchard') {
+                          if (listing.listingType != 'full_orchard')
                             return false;
                         }
 

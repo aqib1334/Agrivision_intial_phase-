@@ -315,7 +315,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                             const Text(
                               "Remember your password?",
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Color.fromARGB(255, 32, 25, 25),
                                 fontSize: 15,
                               ),
                             ),
@@ -326,7 +326,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: Colors.white,
+                                  color: Color.fromARGB(255, 32, 25, 25),
                                   decoration: TextDecoration.underline,
                                 ),
                               ),
