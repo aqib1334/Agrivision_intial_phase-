@@ -386,9 +386,9 @@ class _FilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _FilterHeaderDelegate({required this.child});
 
   @override
-  double get minExtent => 112;
+  double get minExtent => 110;
   @override
-  double get maxExtent => 112;
+  double get maxExtent => 110;
 
   @override
   Widget build(_, __, ___) => child;
