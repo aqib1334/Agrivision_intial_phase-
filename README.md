@@ -1,7 +1,7 @@
 # practice
 
 A new Flutter project.
-
+Intial version of project 
 ## Getting Started
 
 This project is a starting point for a Flutter application.
